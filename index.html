@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>weather_app_refita - Project Files</title>
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background: #f7f9fc;
+      color: #333;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      color: #2c3e50;
+      text-align: center;
+    }
+    ul {
+      list-style-type: none;
+      padding-left: 20px;
+    }
+    li {
+      margin: 6px 0;
+    }
+    a {
+      text-decoration: none;
+      color: #0077cc;
+      cursor: pointer;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    .folder {
+      font-weight: bold;
+      color: #2c3e50;
+      cursor: pointer;
+    }
+    .file-content {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 10px;
+      margin-top: 10px;
+      max-height: 400px;
+      overflow-y: auto;
+      font-family: monospace;
+      white-space: pre-wrap;
+    }
+    .loading {
+      color: #666;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <h1>📁 weather_app_refita - Project Files</h1>
+  <p> Klik file Dart untuk melihat konten langsung di halaman.</p>
+
+  <div id="file-list">Loading project files...</div>
+
+  <div id="file-content" class="file-content" style="display: none;"></div>
+
+  <script>
+    const repoOwner = "refitaaaa"; // Ganti dengan username GitHub kamu
+    const repoName = "weather_app_refita"; // Ganti dengan nama repo kamu
+    const branch = "main";
+
+    async function fetchFiles(path = "") {
+      const url = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${path}?ref=${branch}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`Failed to fetch: ${res.status}`);
+      const data = await res.json();
+      return data;
+    }
+
+    async function fetchFileContent(filePath) {
+      const url = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${branch}/${filePath}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`Failed to fetch content: ${res.status}`);
+      return await res.text();
+    }
+
+    async function renderFiles(path = "", container) {
+      try {
+        const files = await fetchFiles(path);
+        const ul = document.createElement("ul");
+        for (const file of files) {
+          const li = document.createElement("li");
+          if (file.type === "dir") {
+            li.innerHTML = `<span class="folder">📂 ${file.name}</span>`;
+            const subContainer = document.createElement("div");
+            subContainer.style.marginLeft = "20px";
+            li.appendChild(subContainer);
+            li.querySelector(".folder").addEventListener("click", async () => {
+              if (subContainer.innerHTML) {
+                subContainer.innerHTML = ""; // Collapse
+              } else {
+                await renderFiles(file.path, subContainer); // Expand
+              }
+            });
+          } else {
+            const link = document.createElement("a");
+            link.textContent = `📄 ${file.name}`;
+            if (file.name.endsWith('.dart')) {
+              link.addEventListener("click", async (e) => {
+                e.preventDefault();
+                await displayFileContent(file.path);
+              });
+            } else {
+              link.href = `https://github.com/${repoOwner}/${repoName}/blob/${branch}/${file.path}`;
+              link.target = "_blank";
+            }
+            li.appendChild(link);
+          }
+          ul.appendChild(li);
+        }
+        container.innerHTML = "";
+        container.appendChild(ul);
+      } catch (error) {
+        container.innerHTML = `<p style="color: red;">Error loading files: ${error.message}</p>`;
+      }
+    }
+
+    async function displayFileContent(filePath) {
+      const contentDiv = document.getElementById("file-content");
+      contentDiv.style.display = "block";
+      contentDiv.innerHTML = '<div class="loading">Loading file content...</div>';
+      try {
+        const content = await fetchFileContent(filePath);
+        contentDiv.innerHTML = `<h3>Content of ${filePath}:</h3><pre>${content}</pre>`;
+      } catch (error) {
+        contentDiv.innerHTML = `<p style="color: red;">Error loading file: ${error.message}</p>`;
+      }
+    }
+
+    // Inisialisasi
+    renderFiles("", document.getElementById("file-list"));
+  </script>
+</body>
+</html>
